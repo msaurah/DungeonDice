@@ -1,21 +1,31 @@
 
 fun main (args: Array<String>) {
     var exit = false
-    var team = mutableListOf<Hero>()
-    var enemies = mutableListOf<Enemy>()
+    var team = createTeam()
+    var dungeon = mutableListOf<Enemy>()
+    var level = 1
+
+    println("Welcome to Dungeon Dice")
+    println("This is your group of heroes")
+    showTeam(team)
+
     do {
+        var newLevel = level
         println()
         println("What do you want to do?")
         when (readLine().toString()) {
             "help" -> help()
-            "roll" -> println(rollDice())
-            "hero" -> createHero()
             "create team" -> team = createTeam()
             "show team" -> showTeam(team)
-            "enter dungeon" -> enemies = createEnemies()
-            "attack" -> startAttack(team, enemies)
+            "enter dungeon" -> dungeon = createEnemies(level)
+            "attack" -> newLevel = startAttack(team, dungeon, level)
             "exit" -> exit = true
             else -> println("I don't know what is this ¯\\_(ツ)_/¯")
+        }
+        if (newLevel != level) {
+            println("Next Level")
+            dungeon = createEnemies(newLevel)
+            level = newLevel
         }
     } while (exit == false)
 }

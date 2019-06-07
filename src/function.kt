@@ -1,24 +1,40 @@
 import kotlin.random.Random
 
-fun createHero(){
-    var hero = Hero()
-    println(hero.getType())
+fun rollDice (sides: Int = 6): Int {
+    return if (sides == 0) 0 else Random.nextInt(sides) + 1
 }
+
+private fun newHero (team: MutableList<Hero>) {
+    team.add(Hero())
+    team.sortBy { it.type }
+}
+
+private fun killHero(heroIndex: Int, heroTeam: MutableList<Hero>){ heroTeam.removeAt(heroIndex) }
 
 fun createTeam(numberMember: Int = 6): MutableList<Hero> {
     var team = mutableListOf<Hero>()
     for (i in 1..numberMember) {
         team.add(Hero())
     }
-    showTeam(team)
+
+    //Sort enemies by type
+    team.sortBy { it.type }
+
     return team
 }
+
+
+private fun killEnemy(enemyIndex: Int, enemyTeam: MutableList<Enemy>) { enemyTeam.removeAt(enemyIndex) }
 
 fun createEnemies(levelDungeon: Int = 6): MutableList<Enemy> {
     var team = mutableListOf<Enemy>()
     for (i in 1..levelDungeon) {
         team.add(Enemy())
     }
+
+    //Sort enemies by type
+    team.sortBy { it.type }
+
     showEnemies(team)
     return team
 }
@@ -37,72 +53,73 @@ fun showEnemies(team: List<Enemy>) {
     }
 }
 
-fun startAttack(heroTeam: MutableList<Hero>, enemyTeam: MutableList<Enemy>){
+fun startAttack(heroTeam: MutableList<Hero>, enemyTeam: MutableList<Enemy>, level: Int): Int{
+    var newLevel = level
     println("Who attacks?")
     var hero = readLine()!!.toInt()
     println("Who is being attacked?")
     var enemy = readLine()!!.toInt()
     attack(hero, heroTeam, enemy, enemyTeam)
     //TODO("check if the input is a number and repeat until it is")
+
+    if (enemyTeam.count() == 0) {
+        newLevel++
+    }
+    return newLevel
 }
 
-fun attack(hero: Int, heroTeam: MutableList<Hero>, enemy: Int, enemyTeam: MutableList<Enemy>) {
-    if (hero > heroTeam.count() || enemy > enemyTeam.count()){
+fun attack(heroIndex: Int, heroTeam: MutableList<Hero>, enemyIndex: Int, enemyTeam: MutableList<Enemy>) {
+    if (heroIndex > heroTeam.count() || enemyIndex > enemyTeam.count()){
         return println("You missed something")
     }
-    var heroType = heroTeam[hero].type
-    var heroName = heroTeam[hero].getType()
-    var enemyType = enemyTeam[enemy].type
-    var enemyName = enemyTeam[enemy].getType()
 
-    killEnemy(enemy, enemyTeam)
-    killHero(hero, heroTeam)
-    println("The ${heroName} killed a ${enemyName}.")
+    var heroType = heroTeam[heroIndex].type
+    var heroName = heroTeam[heroIndex].getType()
+
+    var enemyType = enemyTeam[enemyIndex].type
+    var enemyName = enemyTeam[enemyIndex].getType()
+
+    var enemiesTypes = listTypes(enemyTeam)
+
+    //potions add a hero member
+    if (enemyType == 6) {
+        var potion = 0
+        var listEnemiesKilled = mutableListOf<Int>()
+        for (i in 0 until enemyTeam.count()) {
+            if (enemyTeam[i].type == 6)
+                listEnemiesKilled.add(i)
+        }
+        for (i in (listEnemiesKilled.count() - 1) downTo 0) {
+            killEnemy(listEnemiesKilled[i], enemyTeam)
+            potion++
+            newHero(heroTeam)
+        }
+        println("You drink ${potion} potion")
+    }
+    else {
+        if (enemiesTypes.contains(heroType) && heroType == enemyType) {
+            var listEnemiesKilled = mutableListOf<Int>()
+            for (i in 0 until enemyTeam.count()) {
+                if (enemyTeam[i].type == heroType)
+                    listEnemiesKilled.add(i)
+            }
+            for (i in (listEnemiesKilled.count() - 1) downTo 0) {
+                killEnemy(listEnemiesKilled[i], enemyTeam)
+            }
+        } else
+            killEnemy(enemyIndex, enemyTeam)
+
+        killHero(heroIndex, heroTeam)
+
+        println("The ${heroName} killed a ${enemyName}.")
+        println()
+        println("Left enemies")
+        showEnemies(enemyTeam)
+    }
+    //TODO("create turns: first kill enemies, then use chest or potion")
 }
-//TODO("basic attack 1vs1")
+
 fun attackTypes(){}
 
-fun killEnemy(enemy: Int, enemyTeam: MutableList<Enemy>) {
-    enemyTeam.removeAt(enemy)
-}
-
-fun killHero(hero: Int, heroTeam: MutableList<Hero>){heroTeam.removeAt(hero)}
-
-fun rollDice (sides: Int = 6): Int {
-    return if (sides == 0) 0 else Random.nextInt(sides) + 1
-}
-
-open class Character (){
-    var type: Int
-    init {
-        type = rollDice()
-    }
-}
-
-class Hero () : Character() {
-    fun getType():String {
-        return when(this.type) {
-            1 -> "Champion"
-            2 -> "Wizard"
-            3 -> "Warrior"
-            4 -> "Sorcerer"
-            5 -> "Thief"
-            6 -> "Pergamin"
-            else -> "none"
-        }
-    }
-}
-
-class Enemy () : Character() {
-    fun getType():String {
-        return when(this.type) {
-            1 -> "Dragon"
-            2 -> "Slime"
-            3 -> "Troll"
-            4 -> "Undead"
-            5 -> "Chest"
-            6 -> "Potion"
-            else -> "none"
-        }
-    }
-}
+// return a list with the types of the enemies
+fun listTypes(party: List<Enemy>) : List<Int> = party.map { it.type }
