@@ -1,8 +1,5 @@
 open class Character (){
-    var type: Int
-    init {
-        type = rollDice()
-    }
+    var type: Int = rollDice()
 }
 
 class Hero () : Character() {
